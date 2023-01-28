@@ -60,14 +60,11 @@ public static class XmlCsprojReader
     /// <typeparam name="T">Tipo a guardar</typeparam>
     /// <param name="filePath">Ruta completa hasta el archivo a leer.</param>
     /// <returns>Los elementos encontrados de tipo T</returns>
-    public static List<T> Load<T>(string filePath) where T : BaseMetadata
+    public static List<BaseMetadata> Load(string filePath)
     {
         lock (_lockFile)
         {
-            var items = new List<T>();
-
-            var itemType = typeof(T);
-            var props = itemType.GetProperties().ToList();
+            var items = new List<BaseMetadata>();
 
             try
             {
@@ -97,7 +94,7 @@ public static class XmlCsprojReader
 
                     if (name.StartsWith(Prefix.METHODS))
                     {
-                        var x = ReadNodeMethod(member, name);
+                        items.Add(ReadNodeMethod(member, name));
                         continue;
                     }
 
