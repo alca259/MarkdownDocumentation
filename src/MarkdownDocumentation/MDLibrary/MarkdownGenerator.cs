@@ -40,10 +40,10 @@ public sealed class MarkdownGenerator
         sb.AppendLine($@"- **Ruta completa**: {item.FullName}");
 
         if (!string.IsNullOrWhiteSpace(item.Summary))
-            sb.AppendLine($@"- **Resumen**: _{item.Summary.Trim()}_");
+            sb.AppendLine($@"- **Resumen**: {item.Summary.Trim()}");
 
         if (!string.IsNullOrWhiteSpace(item.Remarks))
-            sb.AppendLine($@"- **Descripción**: _{item.Remarks.Trim()}_");
+            sb.AppendLine($@"- **Descripción**:{Environment.NewLine}{item.Remarks.Trim()}");
 
         sb.Append(GetTableOfContents(item));
 
@@ -101,7 +101,7 @@ public sealed class MarkdownGenerator
                 if (!string.IsNullOrWhiteSpace(method.Summary))
                     sb.AppendLine($@"- **Resumen**: {method.Summary.Trim()}");
                 if (!string.IsNullOrWhiteSpace(method.Remarks))
-                    sb.AppendLine($@"- **Descripción**: {method.Remarks.Trim()}");
+                    sb.AppendLine($@"- **Descripción**:{Environment.NewLine}{method.Remarks.Trim()}");
 
                 if (!string.IsNullOrWhiteSpace(method.Example))
                 {
@@ -153,7 +153,7 @@ public sealed class MarkdownGenerator
                 {
                     sb.AppendLine();
                     sb.AppendLine("**Retorna**:");
-                    sb.AppendLine($"- Resumen: {method.Returns.Summary}");
+                    sb.AppendLine($"- Resumen: {method.Returns.Summary?.Trim()}");
                     sb.AppendLine($"- Tipo de dato: {method.Returns.FullName}");
                 }
 
@@ -181,7 +181,7 @@ public sealed class MarkdownGenerator
             sb.AppendLine("- Propiedades");
             foreach (var prop in item.Properties)
             {
-                sb.AppendLine($"    - {prop.Name}{(string.IsNullOrWhiteSpace(prop.Summary) ? $" `{prop.Summary.Trim()}`" : string.Empty)}");
+                sb.AppendLine($"    - {prop.Name}{(!string.IsNullOrWhiteSpace(prop.Summary) ? $" `{prop.Summary.Trim()}`" : string.Empty)}");
             }
         }
 
@@ -190,7 +190,7 @@ public sealed class MarkdownGenerator
             sb.AppendLine("- Campos");
             foreach (var field in item.Fields)
             {
-                sb.AppendLine($"    - {field.Name}{(string.IsNullOrWhiteSpace(field.Summary) ? $" `{field.Summary.Trim()}`" : string.Empty)}");
+                sb.AppendLine($"    - {field.Name}{(!string.IsNullOrWhiteSpace(field.Summary) ? $" `{field.Summary.Trim()}`" : string.Empty)}");
             }
         }
 
@@ -199,7 +199,7 @@ public sealed class MarkdownGenerator
             sb.AppendLine("- Eventos");
             foreach (var @event in item.Events)
             {
-                sb.AppendLine($"    - {@event.Name}{(string.IsNullOrWhiteSpace(@event.Summary) ? $" `{@event.Summary.Trim()}`" : string.Empty)}");
+                sb.AppendLine($"    - {@event.Name}{(!string.IsNullOrWhiteSpace(@event.Summary) ? $" `{@event.Summary.Trim()}`" : string.Empty)}");
             }
         }
 
@@ -209,7 +209,7 @@ public sealed class MarkdownGenerator
             foreach (var method in item.Methods)
             {
                 // Header
-                sb.AppendLine($@"    - {method.Name}{(string.IsNullOrWhiteSpace(method.Summary) ? $" `{method.Summary.Trim()}`" : string.Empty)}");
+                sb.AppendLine($@"    - {method.Name}{(!string.IsNullOrWhiteSpace(method.Summary) ? $" `{method.Summary.Trim()}`" : string.Empty)}");
             }
         }
 
