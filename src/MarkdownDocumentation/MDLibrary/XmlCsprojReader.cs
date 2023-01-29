@@ -142,15 +142,17 @@ public static class XmlCsprojReader
 
     private static EventMetadata ReadNodeEvent(XElement member, string name)
     {
-        (string namespaceName, _, string typeName, _) = GetNamesAndParams(name);
+        (string fullClassName, string className, string fullElementName, string elementName) = GetPropertyAndFieldNames(name);
 
         var summary = member.Element(XmlNodeNames.SUMMARY)?.Value;
 
         var result = new EventMetadata
         {
-            Name = typeName,
-            FullName = namespaceName,
-            Summary = summary
+            Name = elementName,
+            FullName = fullElementName,
+            Summary = summary,
+            FullClassName = fullClassName,
+            ClassName = className
         };
 
         return result;
@@ -158,17 +160,19 @@ public static class XmlCsprojReader
 
     private static PropertyMetadata ReadNodeProperty(XElement member, string name)
     {
-        (string namespaceName, _, string propertyName, _) = GetNamesAndParams(name);
+        (string fullClassName, string className, string fullElementName, string elementName) = GetPropertyAndFieldNames(name);
 
         var summary = member.Element(XmlNodeNames.SUMMARY)?.Value;
-        var cref = member.Element(XmlNodeNames.SEE)?.Attribute(XmlAttributeNames.CREF)?.Value;
+        var cref = GetCRefValue(member.Element(XmlNodeNames.SEE));
 
         var result = new PropertyMetadata
         {
-            Name = propertyName,
-            FullName = namespaceName,
+            Name = elementName,
+            FullName = fullElementName,
             Summary = summary,
-            TypeName = cref
+            TypeName = cref,
+            FullClassName = fullClassName,
+            ClassName = className
         };
 
         return result;
@@ -176,17 +180,19 @@ public static class XmlCsprojReader
 
     private static FieldMetadata ReadNodeField(XElement member, string name)
     {
-        (string namespaceName, _, string fieldName, _) = GetNamesAndParams(name);
+        (string fullClassName, string className, string fullElementName, string elementName) = GetPropertyAndFieldNames(name);
 
         var summary = member.Element(XmlNodeNames.SUMMARY)?.Value;
-        var cref = member.Element(XmlNodeNames.SEE)?.Attribute(XmlAttributeNames.CREF)?.Value;
+        var cref = GetCRefValue(member.Element(XmlNodeNames.SEE));
 
         var result = new FieldMetadata
         {
-            Name = fieldName,
-            FullName = namespaceName,
+            Name = elementName,
+            FullName = fullElementName,
             Summary = summary,
-            TypeName = cref
+            TypeName = cref,
+            FullClassName = fullClassName,
+            ClassName = className
         };
 
         return result;
@@ -194,15 +200,15 @@ public static class XmlCsprojReader
 
     private static TypeMetadata ReadNodeType(XElement member, string name)
     {
-        (string namespaceName, _, string typeName, _) = GetNamesAndParams(name);
+        (_, _, string fullElementName, string elementName) = GetPropertyAndFieldNames(name);
 
         var summary = member.Element(XmlNodeNames.SUMMARY)?.Value;
         var remarks = member.Element(XmlNodeNames.REMARKS)?.Value;
 
         var result = new TypeMetadata
         {
-            Name = typeName,
-            FullName = namespaceName,
+            Name = elementName,
+            FullName = fullElementName,
             Summary = summary,
             Remarks = remarks
         };
@@ -212,7 +218,8 @@ public static class XmlCsprojReader
 
     private static MethodMetadata ReadNodeMethod(XElement member, string name)
     {
-        (string namespaceName, string className, string methodName, List<string> parameterNames) = GetNamesAndParams(name);
+        (string fullClassName, string className, string fullElementName, string elementName) = GetPropertyAndFieldNames(name);
+        List<string> parameterNames = GetMethodParams(name);
 
         var summary = member.Element(XmlNodeNames.SUMMARY)?.Value;
         var parameters = member.Elements(XmlNodeNames.PARAM).ToList();
@@ -226,9 +233,10 @@ public static class XmlCsprojReader
         var result = new MethodMetadata
         {
             IsConstructor = name.Contains(CONSTRUCTOR_NAME),
-            Name = methodName,
+            Name = elementName,
             ClassName = className,
-            FullName = namespaceName,
+            FullClassName = fullClassName,
+            FullName = fullElementName,
             Summary = summary,
             Parameters = ReadNodeMethodParameters(parameters, parameterNames),
             Example = example,
@@ -261,7 +269,7 @@ public static class XmlCsprojReader
         var result = new List<ExceptionMetadata>();
         foreach (XElement exception in exceptions)
         {
-            var fullName = exception.Attribute(XmlAttributeNames.CREF)?.Value;
+            var fullName = GetCRefValue(exception);
             var name = fullName?.Split('.')?.LastOrDefault();
 
             result.Add(new ExceptionMetadata
@@ -280,7 +288,7 @@ public static class XmlCsprojReader
         return new ReturnMetadata
         {
             Summary = returns.Value,
-            FullName = returns.Attribute(XmlAttributeNames.CREF)?.Value
+            FullName = GetCRefValue(returns)
         };
     }
 
@@ -299,7 +307,7 @@ public static class XmlCsprojReader
                 TypeName = typeName,
                 Name = element?.Attribute(XmlAttributeNames.NAME)?.Value,
                 Summary = element?.Value,
-                FullName = element?.Attribute(XmlAttributeNames.CREF)?.Value
+                FullName = GetCRefValue(element)
             });
 
             ix++;
@@ -308,36 +316,47 @@ public static class XmlCsprojReader
         return result;
     }
 
-    private static (string namespaceName, string className, string methodName, List<string> parameterNames) GetNamesAndParams(string name)
+    private static string GetCRefValue(XElement element)
     {
-        string fullName = name;
+        var value = element?.Attribute(XmlAttributeNames.CREF)?.Value;
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        return value[2..];
+    }
+
+    private static (string fullClassName, string className, string fullElementName, string elementName) GetPropertyAndFieldNames(string name)
+    {
+        string fullClassName = string.Empty;
         string className = string.Empty;
-        string methodName = string.Empty;
-        List<string> parameterNames = new();
+        string fullElementName = name;
+        string elementName = string.Empty;
 
-        if (string.IsNullOrWhiteSpace(name)) return (fullName, className, methodName, parameterNames);
+        if (string.IsNullOrWhiteSpace(name)) return (fullClassName, className, fullElementName, elementName);
 
-        fullName = name.Contains('(') && name.Contains(')')
-            ? name[2..name.IndexOf('(')]
-            : name[2..];
+        fullElementName = name[2..];
 
-        var splittedName = fullName.Split('.', StringSplitOptions.RemoveEmptyEntries);
+        var splittedName = fullElementName.Split('.', StringSplitOptions.RemoveEmptyEntries);
         if (splittedName.Length >= 2)
         {
-            methodName = splittedName[^1];
+            elementName = splittedName[^1];
             className = splittedName[^2];
         }
         else if (splittedName.Length == 1)
         {
-            methodName = splittedName[0];
+            elementName = splittedName[0];
         }
 
-        if (!name.Contains('(') || !name.Contains(')'))
-        {
-            return (fullName, className, methodName, parameterNames);
-        }
+        fullClassName = fullElementName[0..(fullElementName.LastIndexOf(elementName) - 1)];
+
+        return (fullClassName, className, fullElementName, elementName);
+    }
+
+    private static List<string> GetMethodParams(string name)
+    {
+        List<string> parameterNames = new();
+        if (string.IsNullOrWhiteSpace(name)) return parameterNames;
+        if (!name.Contains('(') || !name.Contains(')')) return parameterNames;
 
         parameterNames = name[(name.IndexOf('(') + 1)..name.IndexOf(')')].Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();
-        return (fullName, className, methodName, parameterNames);
+        return parameterNames;
     }
 }

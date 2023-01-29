@@ -3,6 +3,7 @@
 public sealed class MethodMetadata : BaseMetadata
 {
     public bool IsConstructor { get; set; } = false;
+    public string FullClassName { get; set; }
     public string ClassName { get; set; }
     public string Remarks { get; set; }
     public ReturnMetadata Returns { get; set; }
