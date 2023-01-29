@@ -1,4 +1,5 @@
 ﻿using MDLibrary.Models;
+using System;
 using System.Text;
 using System.Xml.Linq;
 
@@ -100,21 +101,25 @@ public static class XmlCsprojReader
 
                     if (name.StartsWith(Prefix.TYPES))
                     {
+                        items.Add(ReadNodeType(member, name));
                         continue;
                     }
 
                     if (name.StartsWith(Prefix.FIELDS))
                     {
+                        items.Add(ReadNodeField(member, name));
                         continue;
                     }
 
                     if (name.StartsWith(Prefix.PROPERTIES))
                     {
+                        items.Add(ReadNodeProperty(member, name));
                         continue;
                     }
 
                     if (name.StartsWith(Prefix.EVENTS))
                     {
+                        items.Add(ReadNodeEvent(member, name));
                         continue;
                     }
 
@@ -130,6 +135,72 @@ public static class XmlCsprojReader
 
             return items;
         }
+    }
+
+    private static EventMetadata ReadNodeEvent(XElement member, string name)
+    {
+        (string namespaceName, _, string typeName, _) = GetNamesAndParams(name);
+
+        var summary = member.Element(XmlNodeNames.SUMMARY)?.Value;
+
+        var result = new EventMetadata
+        {
+            Name = typeName,
+            FullName = namespaceName,
+            Summary = summary
+        };
+
+        return result;
+    }
+
+    private static PropertyMetadata ReadNodeProperty(XElement member, string name)
+    {
+        (string namespaceName, _, string propertyName, _) = GetNamesAndParams(name);
+
+        var summary = member.Element(XmlNodeNames.SUMMARY)?.Value;
+
+        var result = new PropertyMetadata
+        {
+            Name = propertyName,
+            FullName = namespaceName,
+            Summary = summary
+        };
+
+        return result;
+    }
+
+    private static FieldMetadata ReadNodeField(XElement member, string name)
+    {
+        (string namespaceName, _, string fieldName, _) = GetNamesAndParams(name);
+
+        var summary = member.Element(XmlNodeNames.SUMMARY)?.Value;
+
+        var result = new FieldMetadata
+        {
+            Name = fieldName,
+            FullName = namespaceName,
+            Summary = summary
+        };
+
+        return result;
+    }
+
+    private static TypeMetadata ReadNodeType(XElement member, string name)
+    {
+        (string namespaceName, _, string typeName, _) = GetNamesAndParams(name);
+
+        var summary = member.Element(XmlNodeNames.SUMMARY)?.Value;
+        var remarks = member.Element(XmlNodeNames.REMARKS)?.Value;
+
+        var result = new TypeMetadata
+        {
+            Name = typeName,
+            FullName = namespaceName,
+            Summary = summary,
+            Remarks = remarks
+        };
+
+        return result;
     }
 
     private static MethodMetadata ReadNodeMethod(XElement member, string name)
