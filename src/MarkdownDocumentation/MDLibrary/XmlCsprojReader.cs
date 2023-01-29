@@ -89,8 +89,6 @@ public static class XmlCsprojReader
 
                 var members = doc.Root.Descendants(XmlNodeNames.MEMBERS).Descendants(XmlNodeNames.MEMBER).ToList();
 
-
-
                 foreach (XElement member in members)
                 {
                     var name = member.Attribute(XmlAttributeNames.NAME).Value;
@@ -128,6 +126,11 @@ public static class XmlCsprojReader
 
                     // ?
                     throw new ArgumentException($"Cannot determinate type of {name}", name);
+                }
+
+                foreach (var item in items)
+                {
+                    item.AssemblyName = assemblyName;
                 }
             }
             catch (Exception)
@@ -285,6 +288,7 @@ public static class XmlCsprojReader
     private static ReturnMetadata ReadNodeMethodReturns(XElement returns)
     {
         if (returns == null) return null;
+        if (string.IsNullOrWhiteSpace(returns.Value) && string.IsNullOrWhiteSpace(GetCRefValue(returns))) return null;
         return new ReturnMetadata
         {
             Summary = returns.Value,
@@ -332,7 +336,9 @@ public static class XmlCsprojReader
 
         if (string.IsNullOrWhiteSpace(name)) return (fullClassName, className, fullElementName, elementName);
 
-        fullElementName = name[2..];
+        fullElementName = (!name.Contains('(') || !name.Contains(')'))
+            ? name[2..]
+            : name[2..(name.IndexOf('('))];
 
         var splittedName = fullElementName.Split('.', StringSplitOptions.RemoveEmptyEntries);
         if (splittedName.Length >= 2)
@@ -345,7 +351,8 @@ public static class XmlCsprojReader
             elementName = splittedName[0];
         }
 
-        fullClassName = fullElementName[0..(fullElementName.LastIndexOf(elementName) - 1)];
+        var length = fullElementName.LastIndexOf(elementName) - 1;
+        fullClassName = name.StartsWith(Prefix.TYPES) ? fullElementName : fullElementName[0..length];
 
         return (fullClassName, className, fullElementName, elementName);
     }

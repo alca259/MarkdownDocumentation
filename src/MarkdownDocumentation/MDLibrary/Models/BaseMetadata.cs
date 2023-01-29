@@ -8,4 +8,5 @@ public abstract class BaseMetadata
     public string Summary { get; set; }
     public string FullName { get; set; }
     public int Order { get; private set; } = _counter++;
+    public string AssemblyName { get; set; }
 }

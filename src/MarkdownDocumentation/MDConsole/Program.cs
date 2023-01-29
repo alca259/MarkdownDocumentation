@@ -1,4 +1,5 @@
 ﻿using MDLibrary;
+using MDLibrary.Models;
 
 namespace MDConsole;
 
@@ -8,15 +9,23 @@ internal static class Program
     {
         Console.WriteLine("Hello, World!");
 
-        var endpointsFilePath = @"..\\..\\..\\..\\..\\..\\..\\..\\TempFiles\\Endpoints.Api.xml";
-        var logicFilePath = @"..\\..\\..\\..\\..\\..\\..\\..\\TempFiles\\Endpoints.Logic.xml";
+        var inputFolder = @"..\\..\\..\\..\\..\\..\\..\\..\\TempFiles\\Input";
         var outputFolder = @"..\\..\\..\\..\\..\\..\\..\\..\\TempFiles\\Output";
 
-        var result = XmlCsprojReader.Load(endpointsFilePath);
-        result.AddRange(XmlCsprojReader.Load(logicFilePath));
-        MetadataResolver.ResolveTypeNames(result);
+        List<BaseMetadata> result = new();
 
-        var mdGenerator = new MarkdownGenerator(result, outputFolder);
+        if (!Directory.Exists(inputFolder)) throw new ApplicationException($"Path: {inputFolder} not found.");
+
+        var files = Directory.GetFiles(inputFolder, "*.xml", SearchOption.AllDirectories);
+
+        foreach (var file in files)
+        {
+            result.AddRange(XmlCsprojReader.Load(file));
+        }
+
+        var types = MetadataResolver.ResolveTypeNames(result);
+
+        var mdGenerator = new MarkdownGenerator(types, outputFolder);
         await mdGenerator.DoIt();
 
         Console.WriteLine("Bye, World!");
