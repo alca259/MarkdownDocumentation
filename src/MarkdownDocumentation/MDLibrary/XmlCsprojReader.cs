@@ -21,6 +21,7 @@ public static class XmlCsprojReader
         public const string RETURNS = "returns";
         public const string EXAMPLE = "example";
         public const string EXCEPTION = "exception";
+        public const string SEE = "see";
     }
 
     private struct XmlAttributeNames
@@ -29,6 +30,8 @@ public static class XmlCsprojReader
         public const string CREF = "cref";
         public const string CODE = "code";
     }
+
+    public const string CONSTRUCTOR_NAME = ".#ctor";
 
     /// <summary>
     /// The prefix of the name property determines what kind of code element the documentation is for, as follows:
@@ -158,12 +161,14 @@ public static class XmlCsprojReader
         (string namespaceName, _, string propertyName, _) = GetNamesAndParams(name);
 
         var summary = member.Element(XmlNodeNames.SUMMARY)?.Value;
+        var cref = member.Element(XmlNodeNames.SEE)?.Attribute(XmlAttributeNames.CREF)?.Value;
 
         var result = new PropertyMetadata
         {
             Name = propertyName,
             FullName = namespaceName,
-            Summary = summary
+            Summary = summary,
+            TypeName = cref
         };
 
         return result;
@@ -174,12 +179,14 @@ public static class XmlCsprojReader
         (string namespaceName, _, string fieldName, _) = GetNamesAndParams(name);
 
         var summary = member.Element(XmlNodeNames.SUMMARY)?.Value;
+        var cref = member.Element(XmlNodeNames.SEE)?.Attribute(XmlAttributeNames.CREF)?.Value;
 
         var result = new FieldMetadata
         {
             Name = fieldName,
             FullName = namespaceName,
-            Summary = summary
+            Summary = summary,
+            TypeName = cref
         };
 
         return result;
@@ -209,23 +216,24 @@ public static class XmlCsprojReader
 
         var summary = member.Element(XmlNodeNames.SUMMARY)?.Value;
         var parameters = member.Elements(XmlNodeNames.PARAM).ToList();
-        
+
         var remarks = member.Element(XmlNodeNames.REMARKS)?.Value;
         var responses = member.Elements(XmlNodeNames.RESPONSE).ToList();
-        var returns = member.Element(XmlNodeNames.RETURNS)?.Value;
+        var returns = member.Element(XmlNodeNames.RETURNS);
         var example = member.Element(XmlNodeNames.EXAMPLE)?.Value;
         var exceptions = member.Elements(XmlNodeNames.EXCEPTION).ToList();
 
         var result = new MethodMetadata
         {
+            IsConstructor = name.Contains(CONSTRUCTOR_NAME),
             Name = methodName,
             ClassName = className,
             FullName = namespaceName,
             Summary = summary,
-            Parameters = ReadNodeParameters(parameters, parameterNames),
+            Parameters = ReadNodeMethodParameters(parameters, parameterNames),
             Example = example,
             Remarks = remarks,
-            Returns = returns,
+            Returns = ReadNodeMethodReturns(returns),
             Exceptions = ReadNodeExceptions(exceptions),
             Responses = ReadNodeResponses(responses)
         };
@@ -266,7 +274,17 @@ public static class XmlCsprojReader
         return result;
     }
 
-    private static List<ParameterMetadata> ReadNodeParameters(List<XElement> parameters, List<string> parameterNames)
+    private static ReturnMetadata ReadNodeMethodReturns(XElement returns)
+    {
+        if (returns == null) return null;
+        return new ReturnMetadata
+        {
+            Summary = returns.Value,
+            FullName = returns.Attribute(XmlAttributeNames.CREF)?.Value
+        };
+    }
+
+    private static List<ParameterMetadata> ReadNodeMethodParameters(List<XElement> parameters, List<string> parameterNames)
     {
         var result = new List<ParameterMetadata>();
 
@@ -280,7 +298,8 @@ public static class XmlCsprojReader
             {
                 TypeName = typeName,
                 Name = element?.Attribute(XmlAttributeNames.NAME)?.Value,
-                Summary = element?.Value
+                Summary = element?.Value,
+                FullName = element?.Attribute(XmlAttributeNames.CREF)?.Value
             });
 
             ix++;
