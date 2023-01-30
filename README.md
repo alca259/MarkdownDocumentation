@@ -11,12 +11,12 @@ Console tool for generate markdown documentation at .NET projects
     - `<summary>Resumen</summary>`
 
 - Clases, structs, interfaces (Tipos):
-    - `<summary>Resumen</summary>`
-    - `<remarks>Descripción</remarks>`
+    - `<summary>Resumen</summary>` _(Solo 1)_
+    - `<remarks>Descripción</remarks>` _(Solo 1)_
 
 - Métodos:
     - `<summary>Resumen</summary>` _(Solo 1)_
-    - `<param name="nombre del parámetro" cref="tipo de dato">Resumen</param>` _(Múltiples, se espera que en el mismo orden)_
+    - `<param name="nombre del parámetro" cref="tipo de dato">Resumen</param>` _(Múltiples, se asume que en el mismo orden que se han definido en el método.)_
     - `<remarks>Descripción</remarks>` _(Solo 1)_
     - `<response code="200 (u otro código HTTP)">Descripción</response>` _(Múltiples)_
     - `<returns cref="tipo de dato">Resumen</returns>` _(Solo 1)_
