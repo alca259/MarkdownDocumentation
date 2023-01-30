@@ -45,8 +45,6 @@ public sealed class MarkdownGenerator
         if (!string.IsNullOrWhiteSpace(item.Remarks))
             sb.AppendLine($@"- **Descripción**:{Environment.NewLine}{item.Remarks.Trim()}");
 
-        sb.Append(GetTableOfContents(item));
-
         if (item.Properties.Count > 0)
         {
             sb.AppendLine();
@@ -103,61 +101,67 @@ public sealed class MarkdownGenerator
                 if (!string.IsNullOrWhiteSpace(method.Remarks))
                     sb.AppendLine($@"- **Descripción**:{Environment.NewLine}{method.Remarks.Trim()}");
 
-                if (!string.IsNullOrWhiteSpace(method.Example))
+                if (method.HasDetails)
                 {
-                    sb.AppendLine();
-                    sb.AppendLine("**Ejemplo**:");
-                    sb.AppendLine($@"
+                    sb.AppendLine("<details>");
+                    if (!string.IsNullOrWhiteSpace(method.Example))
+                    {
+                        sb.AppendLine();
+                        sb.AppendLine("**Ejemplo**:");
+                        sb.AppendLine($@"
 ```
 {method.Example.Trim()}
 ```");
-                }
-
-                if (method.Parameters.Count > 0)
-                {
-                    sb.AppendLine();
-                    sb.AppendLine("**Parámetros**:");
-                    sb.AppendLine("| Nombre | Resumen | Tipo de dato |");
-                    sb.AppendLine("| ----------- | ----------- | ----------- |");
-                    foreach (var par in method.Parameters)
-                    {
-                        sb.AppendLine($"| {par.Name} | {par.Summary?.Trim()} | {(!string.IsNullOrWhiteSpace(par.TypeName) ? par.TypeName.Trim() : string.Empty)} |");
                     }
-                }
 
-                if (method.Exceptions.Count > 0)
-                {
-                    sb.AppendLine();
-                    sb.AppendLine("**Excepciones**:");
-                    sb.AppendLine("| Nombre | Resumen | Tipo de dato |");
-                    sb.AppendLine("| ----------- | ----------- | ----------- |");
-                    foreach (var ex in method.Exceptions)
+                    if (method.Parameters.Count > 0)
                     {
-                        sb.AppendLine($"| {ex.Name} | {ex.Summary?.Trim()} | {(!string.IsNullOrWhiteSpace(ex.FullName) ? ex.FullName.Trim() : string.Empty)} |");
+                        sb.AppendLine();
+                        sb.AppendLine("**Parámetros**:");
+                        sb.AppendLine("| Nombre | Resumen | Tipo de dato |");
+                        sb.AppendLine("| ----------- | ----------- | ----------- |");
+                        foreach (var par in method.Parameters)
+                        {
+                            sb.AppendLine($"| {par.Name} | {par.Summary?.Trim()} | {(!string.IsNullOrWhiteSpace(par.TypeName) ? par.TypeName.Trim() : string.Empty)} |");
+                        }
                     }
-                }
 
-                if (method.Responses.Count > 0)
-                {
-                    sb.AppendLine();
-                    sb.AppendLine("**Respuestas**:");
-                    sb.AppendLine("| Código | Resumen |");
-                    sb.AppendLine("| ----------- | ----------- |");
-                    foreach (var par in method.Responses)
+                    if (method.Exceptions.Count > 0)
                     {
-                        sb.AppendLine($"| {par.Code} | {par.Summary?.Trim()} |");
+                        sb.AppendLine();
+                        sb.AppendLine("**Excepciones**:");
+                        sb.AppendLine("| Nombre | Resumen | Tipo de dato |");
+                        sb.AppendLine("| ----------- | ----------- | ----------- |");
+                        foreach (var ex in method.Exceptions)
+                        {
+                            sb.AppendLine($"| {ex.Name} | {ex.Summary?.Trim()} | {(!string.IsNullOrWhiteSpace(ex.FullName) ? ex.FullName.Trim() : string.Empty)} |");
+                        }
                     }
-                }
 
-                if (method.Returns != null)
-                {
+                    if (method.Responses.Count > 0)
+                    {
+                        sb.AppendLine();
+                        sb.AppendLine("**Respuestas**:");
+                        sb.AppendLine("| Código | Resumen |");
+                        sb.AppendLine("| ----------- | ----------- |");
+                        foreach (var par in method.Responses)
+                        {
+                            sb.AppendLine($"| {par.Code} | {par.Summary?.Trim()} |");
+                        }
+                    }
+
+                    if (method.Returns != null)
+                    {
+                        sb.AppendLine();
+                        sb.AppendLine("**Retorna**:");
+                        sb.AppendLine($"- Resumen: {method.Returns.Summary?.Trim()}");
+                        sb.AppendLine($"- Tipo de dato: {method.Returns.FullName}");
+                    }
+
                     sb.AppendLine();
-                    sb.AppendLine("**Retorna**:");
-                    sb.AppendLine($"- Resumen: {method.Returns.Summary?.Trim()}");
-                    sb.AppendLine($"- Tipo de dato: {method.Returns.FullName}");
+                    sb.AppendLine("</details>");
                 }
 
-                sb.AppendLine();
                 sb.AppendLine("-------------------------------------------------------");
                 sb.AppendLine();
             }
@@ -165,54 +169,5 @@ public sealed class MarkdownGenerator
 
         if (File.Exists(fileName)) File.Delete(fileName);
         await File.WriteAllTextAsync(fileName, sb.ToString());
-    }
-
-    private static StringBuilder GetTableOfContents(TypeMetadata item)
-    {
-        var sb = new StringBuilder();
-
-        if (item.Properties.Count <= 0 && item.Fields.Count <= 0 && item.Events.Count <= 0 && item.Methods.Count <= 0)
-            return sb;
-
-        sb.AppendLine("## Tabla de contenido:");
-
-        if (item.Properties.Count > 0)
-        {
-            sb.AppendLine("- Propiedades");
-            foreach (var prop in item.Properties)
-            {
-                sb.AppendLine($"    - {prop.Name}{(!string.IsNullOrWhiteSpace(prop.Summary) ? $" `{prop.Summary.Trim()}`" : string.Empty)}");
-            }
-        }
-
-        if (item.Fields.Count > 0)
-        {
-            sb.AppendLine("- Campos");
-            foreach (var field in item.Fields)
-            {
-                sb.AppendLine($"    - {field.Name}{(!string.IsNullOrWhiteSpace(field.Summary) ? $" `{field.Summary.Trim()}`" : string.Empty)}");
-            }
-        }
-
-        if (item.Events.Count > 0)
-        {
-            sb.AppendLine("- Eventos");
-            foreach (var @event in item.Events)
-            {
-                sb.AppendLine($"    - {@event.Name}{(!string.IsNullOrWhiteSpace(@event.Summary) ? $" `{@event.Summary.Trim()}`" : string.Empty)}");
-            }
-        }
-
-        if (item.Methods.Count > 0)
-        {
-            sb.AppendLine("- Métodos");
-            foreach (var method in item.Methods)
-            {
-                // Header
-                sb.AppendLine($@"    - {method.Name}{(!string.IsNullOrWhiteSpace(method.Summary) ? $" `{method.Summary.Trim()}`" : string.Empty)}");
-            }
-        }
-
-        return sb;
     }
 }

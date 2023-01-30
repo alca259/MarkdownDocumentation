@@ -11,4 +11,10 @@ public sealed class MethodMetadata : BaseMetadata
     public List<ExceptionMetadata> Exceptions { get; set; } = new List<ExceptionMetadata>();
     public List<ParameterMetadata> Parameters { get; set; } = new List<ParameterMetadata>();
     public List<ResponseMetadata> Responses { get; set; } = new List<ResponseMetadata>();
+
+    public bool HasDetails => !string.IsNullOrWhiteSpace(Example)
+        || Returns != null
+        || Exceptions.Count > 0
+        || Parameters.Count > 0
+        || Responses.Count > 0;
 }
