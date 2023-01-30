@@ -20,9 +20,9 @@ public sealed class ConsoleOption
     {
         var result = new List<string>();
         if (!string.IsNullOrWhiteSpace(Command))
-            result.Add($"{COMMAND_PREFIX}{Command.ToLower()}");
+            result.Add($"{COMMAND_PREFIX}{Command.Trim().ToLower()}");
         if (!string.IsNullOrWhiteSpace(CommandFull))
-            result.Add($"{COMMAND_FULL_PREFIX}{CommandFull.ToLower()}");
+            result.Add($"{COMMAND_FULL_PREFIX}{CommandFull.Trim().ToLower()}");
         return result;
     }
 
