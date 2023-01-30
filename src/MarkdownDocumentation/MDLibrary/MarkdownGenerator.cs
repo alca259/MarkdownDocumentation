@@ -19,7 +19,7 @@ public sealed class MarkdownGenerator
         if (!Directory.Exists(OutputFolder)) Directory.CreateDirectory(OutputFolder);
     }
 
-    public async Task DoIt()
+    public async Task GeneratePages()
     {
         foreach (var item in Items)
         {
@@ -41,7 +41,7 @@ public sealed class MarkdownGenerator
         sb.AppendLine($"- **Ruta completa**: {item.FullName}");
 
         if (!string.IsNullOrWhiteSpace(item.Summary))
-            sb.AppendLine($"- **Resumen**: {item.Summary.Trim().TrimSpacesBetweenString()}");
+            sb.AppendLine($"- **Resumen**: {item.Summary.Trim().RemoveAllLineBreak().TrimSpacesBetweenString()}");
 
         if (!string.IsNullOrWhiteSpace(item.Remarks))
             sb.AppendLine($"- **Descripción**:{Environment.NewLine}{item.Remarks.Trim().TrimSpacesBetweenString()}");
@@ -66,7 +66,7 @@ public sealed class MarkdownGenerator
         sb.AppendLine("| ----------- | ----------- | ----------- |");
         foreach (var element in elements)
         {
-            sb.AppendLine($"| {element.Name} | {element.Summary?.Trim()?.TrimSpacesBetweenString()} | {(!string.IsNullOrWhiteSpace(element.TypeName) ? element.TypeName.Trim() : string.Empty)} |");
+            sb.AppendLine($"| {element.Name} | {element.Summary?.Trim()?.RemoveAllLineBreak()?.TrimSpacesBetweenString()} | {(!string.IsNullOrWhiteSpace(element.TypeName) ? element.TypeName.Trim() : string.Empty)} |");
         }
     }
 
@@ -81,7 +81,7 @@ public sealed class MarkdownGenerator
         sb.AppendLine("| ----------- | ----------- | ----------- |");
         foreach (var element in elements)
         {
-            sb.AppendLine($"| {element.Name} | {element.Summary?.Trim()?.TrimSpacesBetweenString()} | {(!string.IsNullOrWhiteSpace(element.TypeName) ? element.TypeName.Trim() : string.Empty)} |");
+            sb.AppendLine($"| {element.Name} | {element.Summary?.Trim()?.RemoveAllLineBreak()?.TrimSpacesBetweenString()} | {(!string.IsNullOrWhiteSpace(element.TypeName) ? element.TypeName.Trim() : string.Empty)} |");
         }
     }
 
@@ -96,7 +96,7 @@ public sealed class MarkdownGenerator
         sb.AppendLine("| ----------- | ----------- | ----------- |");
         foreach (var element in elements)
         {
-            sb.AppendLine($"| {element.Name} | {element.Summary?.Trim()?.TrimSpacesBetweenString()} |");
+            sb.AppendLine($"| {element.Name} | {element.Summary?.Trim()?.RemoveAllLineBreak()?.TrimSpacesBetweenString()} |");
         }
     }
 
@@ -138,7 +138,7 @@ public sealed class MarkdownGenerator
 
             sb.AppendLine();
             sb.AppendLine("**Retorna**:");
-            sb.AppendLine($"- Resumen: {returns.Summary?.Trim()?.TrimSpacesBetweenString()}");
+            sb.AppendLine($"- Resumen: {returns.Summary?.Trim()?.RemoveAllLineBreak()?.TrimSpacesBetweenString()}");
             sb.AppendLine($"- Tipo de dato: {returns.FullName}");
         }
 
@@ -152,7 +152,7 @@ public sealed class MarkdownGenerator
             sb.AppendLine("| ----------- | ----------- | ----------- |");
             foreach (var par in parameters)
             {
-                sb.AppendLine($"| {par.Name} | {par.Summary?.Trim()?.TrimSpacesBetweenString()} | {(!string.IsNullOrWhiteSpace(par.TypeName) ? par.TypeName.Trim() : string.Empty)} |");
+                sb.AppendLine($"| {par.Name} | {par.Summary?.Trim()?.RemoveAllLineBreak()?.TrimSpacesBetweenString()} | {(!string.IsNullOrWhiteSpace(par.TypeName) ? par.TypeName.Trim() : string.Empty)} |");
             }
         }
 
@@ -166,7 +166,7 @@ public sealed class MarkdownGenerator
             sb.AppendLine("| ----------- | ----------- | ----------- |");
             foreach (var ex in exceptions)
             {
-                sb.AppendLine($"| {ex.Name} | {ex.Summary?.Trim()?.TrimSpacesBetweenString()} | {(!string.IsNullOrWhiteSpace(ex.FullName) ? ex.FullName.Trim() : string.Empty)} |");
+                sb.AppendLine($"| {ex.Name} | {ex.Summary?.Trim()?.RemoveAllLineBreak()?.TrimSpacesBetweenString()} | {(!string.IsNullOrWhiteSpace(ex.FullName) ? ex.FullName.Trim() : string.Empty)} |");
             }
         }
 
@@ -180,7 +180,7 @@ public sealed class MarkdownGenerator
             sb.AppendLine("| ----------- | ----------- |");
             foreach (var par in responses)
             {
-                sb.AppendLine($"| {par.Code} | {par.Summary?.Trim()?.TrimSpacesBetweenString()} |");
+                sb.AppendLine($"| {par.Code} | {par.Summary?.Trim()?.RemoveAllLineBreak()?.TrimSpacesBetweenString()} |");
             }
         }
         #endregion
@@ -193,7 +193,7 @@ public sealed class MarkdownGenerator
                 sb.AppendLine("- Constructor");
 
             if (!string.IsNullOrWhiteSpace(element.Summary))
-                sb.AppendLine($"- **Resumen**: {element.Summary.Trim().TrimSpacesBetweenString()}");
+                sb.AppendLine($"- **Resumen**: {element.Summary.Trim().RemoveAllLineBreak().TrimSpacesBetweenString()}");
             if (!string.IsNullOrWhiteSpace(element.Remarks))
                 sb.AppendLine($"- **Descripción**:{Environment.NewLine}{element.Remarks.Trim().TrimSpacesBetweenString()}");
 
@@ -218,5 +218,33 @@ public sealed class MarkdownGenerator
 
             DrawEndMethod(sb);
         }
+    }
+
+    public async Task GenerateToc()
+    {
+        if (Items.Count <= 0) return;
+        var sb = new StringBuilder();
+
+        var path = Path.Combine(OutputFolder);
+        if (!Directory.Exists(path)) Directory.CreateDirectory(path);
+
+        var fileName = Path.Combine(path, "README.md");
+
+        // Header
+        sb.AppendLine("# Tabla de contenido");
+        sb.AppendLine();
+
+        foreach (var item in Items)
+        {
+            var uri = $"[{item.Name}](/{item.AssemblyName}/{item.Name})";
+            var summary = !string.IsNullOrWhiteSpace(item.Summary)
+                ? $" _{item.Summary.Trim().RemoveAllLineBreak().TrimSpacesBetweenString()}_"
+                : string.Empty;
+
+            sb.AppendLine($"  - {uri}{summary}");
+        }
+
+        if (File.Exists(fileName)) File.Delete(fileName);
+        await File.WriteAllTextAsync(fileName, sb.ToString());
     }
 }

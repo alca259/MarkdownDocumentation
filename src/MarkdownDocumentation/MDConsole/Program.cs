@@ -34,7 +34,8 @@ internal static class Program
         var types = MetadataResolver.ResolveDependencies(result);
 
         var mdGenerator = new MarkdownGenerator(types, outputFolder);
-        await mdGenerator.DoIt();
+        await mdGenerator.GeneratePages();
+        await mdGenerator.GenerateToc();
 
         Console.WriteLine($"Documentación generada en {new DirectoryInfo(outputFolder).FullName}");
     }
