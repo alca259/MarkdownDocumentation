@@ -1,4 +1,5 @@
-﻿using MDLibrary.Guards;
+﻿using MDLibrary.Extensions;
+using MDLibrary.Guards;
 using MDLibrary.Models;
 using System.Text;
 
@@ -36,138 +37,186 @@ public sealed class MarkdownGenerator
         var fileName = Path.Combine(path, item.Name + ".md");
 
         // Header
-        sb.AppendLine($@"# {item.Name}");
-        sb.AppendLine($@"- **Ruta completa**: {item.FullName}");
+        sb.AppendLine($"# {item.Name}");
+        sb.AppendLine($"- **Ruta completa**: {item.FullName}");
 
         if (!string.IsNullOrWhiteSpace(item.Summary))
-            sb.AppendLine($@"- **Resumen**: {item.Summary.Trim()}");
+            sb.AppendLine($"- **Resumen**: {item.Summary.Trim().TrimSpacesBetweenString()}");
 
         if (!string.IsNullOrWhiteSpace(item.Remarks))
-            sb.AppendLine($@"- **Descripción**:{Environment.NewLine}{item.Remarks.Trim()}");
+            sb.AppendLine($"- **Descripción**:{Environment.NewLine}{item.Remarks.Trim().TrimSpacesBetweenString()}");
 
-        if (item.Properties.Count > 0)
-        {
-            sb.AppendLine();
-            sb.AppendLine("## Propiedades");
-            // Header
-            sb.AppendLine("| Nombre | Resumen | Tipo de dato |");
-            sb.AppendLine("| ----------- | ----------- | ----------- |");
-            foreach (var prop in item.Properties)
-            {
-                sb.AppendLine($"| {prop.Name} | {prop.Summary?.Trim()} | {(!string.IsNullOrWhiteSpace(prop.TypeName) ? prop.TypeName.Trim() : string.Empty)} |");
-            }
-        }
-
-        if (item.Fields.Count > 0)
-        {
-            sb.AppendLine();
-            sb.AppendLine("## Campos");
-            // Header
-            sb.AppendLine("| Nombre | Resumen | Tipo de dato |");
-            sb.AppendLine("| ----------- | ----------- | ----------- |");
-            foreach (var field in item.Fields)
-            {
-                sb.AppendLine($"| {field.Name} | {field.Summary?.Trim()} | {(!string.IsNullOrWhiteSpace(field.TypeName) ? field.TypeName.Trim() : string.Empty)} |");
-            }
-        }
-
-        if (item.Events.Count > 0)
-        {
-            sb.AppendLine();
-            sb.AppendLine("## Eventos");
-            // Header
-            sb.AppendLine("| Nombre | Resumen |");
-            sb.AppendLine("| ----------- | ----------- | ----------- |");
-            foreach (var @event in item.Events)
-            {
-                sb.AppendLine($"| {@event.Name} | {@event.Summary?.Trim()} |");
-            }
-        }
-
-        if (item.Methods.Count > 0)
-        {
-            sb.AppendLine();
-            sb.AppendLine("## Métodos");
-
-            foreach (var method in item.Methods)
-            {
-                // Header
-                sb.AppendLine($@"### {method.Name}");
-                if (method.IsConstructor)
-                    sb.AppendLine("- Constructor");
-
-                if (!string.IsNullOrWhiteSpace(method.Summary))
-                    sb.AppendLine($@"- **Resumen**: {method.Summary.Trim()}");
-                if (!string.IsNullOrWhiteSpace(method.Remarks))
-                    sb.AppendLine($@"- **Descripción**:{Environment.NewLine}{method.Remarks.Trim()}");
-
-                if (method.HasDetails)
-                {
-                    sb.AppendLine("<details>");
-                    if (!string.IsNullOrWhiteSpace(method.Example))
-                    {
-                        sb.AppendLine();
-                        sb.AppendLine("**Ejemplo**:");
-                        sb.AppendLine($@"
-```
-{method.Example.Trim()}
-```");
-                    }
-
-                    if (method.Parameters.Count > 0)
-                    {
-                        sb.AppendLine();
-                        sb.AppendLine("**Parámetros**:");
-                        sb.AppendLine("| Nombre | Resumen | Tipo de dato |");
-                        sb.AppendLine("| ----------- | ----------- | ----------- |");
-                        foreach (var par in method.Parameters)
-                        {
-                            sb.AppendLine($"| {par.Name} | {par.Summary?.Trim()} | {(!string.IsNullOrWhiteSpace(par.TypeName) ? par.TypeName.Trim() : string.Empty)} |");
-                        }
-                    }
-
-                    if (method.Exceptions.Count > 0)
-                    {
-                        sb.AppendLine();
-                        sb.AppendLine("**Excepciones**:");
-                        sb.AppendLine("| Nombre | Resumen | Tipo de dato |");
-                        sb.AppendLine("| ----------- | ----------- | ----------- |");
-                        foreach (var ex in method.Exceptions)
-                        {
-                            sb.AppendLine($"| {ex.Name} | {ex.Summary?.Trim()} | {(!string.IsNullOrWhiteSpace(ex.FullName) ? ex.FullName.Trim() : string.Empty)} |");
-                        }
-                    }
-
-                    if (method.Responses.Count > 0)
-                    {
-                        sb.AppendLine();
-                        sb.AppendLine("**Respuestas**:");
-                        sb.AppendLine("| Código | Resumen |");
-                        sb.AppendLine("| ----------- | ----------- |");
-                        foreach (var par in method.Responses)
-                        {
-                            sb.AppendLine($"| {par.Code} | {par.Summary?.Trim()} |");
-                        }
-                    }
-
-                    if (method.Returns != null)
-                    {
-                        sb.AppendLine();
-                        sb.AppendLine("**Retorna**:");
-                        sb.AppendLine($"- Resumen: {method.Returns.Summary?.Trim()}");
-                        sb.AppendLine($"- Tipo de dato: {method.Returns.FullName}");
-                    }
-
-                    sb.AppendLine();
-                    sb.AppendLine("</details>");
-                }
-
-                sb.AppendLine("-------------------------------------------------------");
-                sb.AppendLine();
-            }
-        }
+        DrawProperties(ref sb, item.Properties);
+        DrawFields(ref sb, item.Fields);
+        DrawEvents(ref sb, item.Events);
+        DrawMethods(ref sb, item.Methods);
 
         if (File.Exists(fileName)) File.Delete(fileName);
         await File.WriteAllTextAsync(fileName, sb.ToString());
+    }
+
+    private static void DrawProperties(ref StringBuilder sb, List<PropertyMetadata> elements)
+    {
+        if (elements.Count <= 0) return;
+
+        sb.AppendLine();
+        sb.AppendLine("## Propiedades");
+        // Header
+        sb.AppendLine("| Nombre | Resumen | Tipo de dato |");
+        sb.AppendLine("| ----------- | ----------- | ----------- |");
+        foreach (var element in elements)
+        {
+            sb.AppendLine($"| {element.Name} | {element.Summary?.Trim()?.TrimSpacesBetweenString()} | {(!string.IsNullOrWhiteSpace(element.TypeName) ? element.TypeName.Trim() : string.Empty)} |");
+        }
+    }
+
+    private static void DrawFields(ref StringBuilder sb, List<FieldMetadata> elements)
+    {
+        if (elements.Count <= 0) return;
+
+        sb.AppendLine();
+        sb.AppendLine("## Campos");
+        // Header
+        sb.AppendLine("| Nombre | Resumen | Tipo de dato |");
+        sb.AppendLine("| ----------- | ----------- | ----------- |");
+        foreach (var element in elements)
+        {
+            sb.AppendLine($"| {element.Name} | {element.Summary?.Trim()?.TrimSpacesBetweenString()} | {(!string.IsNullOrWhiteSpace(element.TypeName) ? element.TypeName.Trim() : string.Empty)} |");
+        }
+    }
+
+    private static void DrawEvents(ref StringBuilder sb, List<EventMetadata> elements)
+    {
+        if (elements.Count <= 0) return;
+
+        sb.AppendLine();
+        sb.AppendLine("## Eventos");
+        // Header
+        sb.AppendLine("| Nombre | Resumen |");
+        sb.AppendLine("| ----------- | ----------- | ----------- |");
+        foreach (var element in elements)
+        {
+            sb.AppendLine($"| {element.Name} | {element.Summary?.Trim()?.TrimSpacesBetweenString()} |");
+        }
+    }
+
+    private static void DrawMethods(ref StringBuilder sb, List<MethodMetadata> elements)
+    {
+        if (elements.Count <= 0) return;
+
+        sb.AppendLine();
+        sb.AppendLine("## Métodos");
+
+        #region Drawing templates
+        static void DrawEndMethod(StringBuilder sb)
+        {
+            sb.AppendLine();
+            sb.AppendLine("-------------------------------------------------------");
+            sb.AppendLine();
+        }
+
+        static void DrawUri(StringBuilder sb, UriMetadata uri)
+        {
+            if (uri == null) return;
+
+            sb.AppendLine();
+            sb.AppendLine($"**URI**: `{uri}`");
+        }
+
+        static void DrawExample(StringBuilder sb, string example)
+        {
+            if (string.IsNullOrWhiteSpace(example)) return;
+
+            sb.AppendLine();
+            sb.AppendLine("**Ejemplo**:");
+            sb.AppendLine($"```{Environment.NewLine}{example.Trim().TrimSpacesBetweenString()}{Environment.NewLine}```");
+        }
+
+        static void DrawReturn(StringBuilder sb, ReturnMetadata returns)
+        {
+            if (returns == null) return;
+
+            sb.AppendLine();
+            sb.AppendLine("**Retorna**:");
+            sb.AppendLine($"- Resumen: {returns.Summary?.Trim()?.TrimSpacesBetweenString()}");
+            sb.AppendLine($"- Tipo de dato: {returns.FullName}");
+        }
+
+        static void DrawParameters(StringBuilder sb, List<ParameterMetadata> parameters)
+        {
+            if (parameters.Count <= 0) return;
+
+            sb.AppendLine();
+            sb.AppendLine("**Parámetros**:");
+            sb.AppendLine("| Nombre | Resumen | Tipo de dato |");
+            sb.AppendLine("| ----------- | ----------- | ----------- |");
+            foreach (var par in parameters)
+            {
+                sb.AppendLine($"| {par.Name} | {par.Summary?.Trim()?.TrimSpacesBetweenString()} | {(!string.IsNullOrWhiteSpace(par.TypeName) ? par.TypeName.Trim() : string.Empty)} |");
+            }
+        }
+
+        static void DrawExceptions(StringBuilder sb, List<ExceptionMetadata> exceptions)
+        {
+            if (exceptions.Count <= 0) return;
+
+            sb.AppendLine();
+            sb.AppendLine("**Excepciones**:");
+            sb.AppendLine("| Nombre | Resumen | Tipo de dato |");
+            sb.AppendLine("| ----------- | ----------- | ----------- |");
+            foreach (var ex in exceptions)
+            {
+                sb.AppendLine($"| {ex.Name} | {ex.Summary?.Trim()?.TrimSpacesBetweenString()} | {(!string.IsNullOrWhiteSpace(ex.FullName) ? ex.FullName.Trim() : string.Empty)} |");
+            }
+        }
+
+        static void DrawResponses(StringBuilder sb, List<ResponseMetadata> responses)
+        {
+            if (responses.Count <= 0) return;
+
+            sb.AppendLine();
+            sb.AppendLine("**Respuestas**:");
+            sb.AppendLine("| Código | Resumen |");
+            sb.AppendLine("| ----------- | ----------- |");
+            foreach (var par in responses)
+            {
+                sb.AppendLine($"| {par.Code} | {par.Summary?.Trim()?.TrimSpacesBetweenString()} |");
+            }
+        }
+        #endregion
+
+        foreach (var element in elements)
+        {
+            // Header
+            sb.AppendLine($"### {element.Name}");
+            if (element.IsConstructor)
+                sb.AppendLine("- Constructor");
+
+            if (!string.IsNullOrWhiteSpace(element.Summary))
+                sb.AppendLine($"- **Resumen**: {element.Summary.Trim().TrimSpacesBetweenString()}");
+            if (!string.IsNullOrWhiteSpace(element.Remarks))
+                sb.AppendLine($"- **Descripción**:{Environment.NewLine}{element.Remarks.Trim().TrimSpacesBetweenString()}");
+
+            if (!element.HasDetails)
+            {
+                DrawEndMethod(sb);
+                return;
+            }
+
+            sb.AppendLine();
+            sb.AppendLine("<details>");
+
+            DrawUri(sb, element.Uri);
+            DrawExample(sb, element.Example);
+            DrawParameters(sb, element.Parameters);
+            DrawExceptions(sb, element.Exceptions);
+            DrawResponses(sb, element.Responses);
+            DrawReturn(sb, element.Returns);
+
+            sb.AppendLine();
+            sb.AppendLine("</details>");
+
+            DrawEndMethod(sb);
+        }
     }
 }

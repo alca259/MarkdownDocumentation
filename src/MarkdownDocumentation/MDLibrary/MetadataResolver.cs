@@ -41,6 +41,15 @@ public static class MetadataResolver
             typeMetadata.Fields.AddRange(fields);
             typeMetadata.Methods.AddRange(methods);
             typeMetadata.Events.AddRange(events);
+
+            foreach (MethodMetadata method in methods)
+            {
+                foreach (PermissionMetadata perm in method.Permissions)
+                {
+                    var summary = elements.Where(w => w is PropertyMetadata || w is FieldMetadata).FirstOrDefault(w => w.FullName == perm.FullName)?.Summary;
+                    perm.Summary = summary;
+                }
+            }
         }
 
         return types;

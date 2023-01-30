@@ -22,6 +22,8 @@ public static class XmlCsprojReader
         public const string EXAMPLE = "example";
         public const string EXCEPTION = "exception";
         public const string SEE = "see";
+        public const string URI = "uri";
+        public const string PERMISSION = "permission";
     }
 
     private struct XmlAttributeNames
@@ -29,6 +31,7 @@ public static class XmlCsprojReader
         public const string NAME = "name";
         public const string CREF = "cref";
         public const string CODE = "code";
+        public const string METHOD = "method";
     }
 
     public const string CONSTRUCTOR_NAME = ".#ctor";
@@ -232,6 +235,8 @@ public static class XmlCsprojReader
         var returns = member.Element(XmlNodeNames.RETURNS);
         var example = member.Element(XmlNodeNames.EXAMPLE)?.Value;
         var exceptions = member.Elements(XmlNodeNames.EXCEPTION).ToList();
+        var permissions = member.Elements(XmlNodeNames.PERMISSION).ToList();
+        var uri = member.Element(XmlNodeNames.URI);
 
         var result = new MethodMetadata
         {
@@ -246,7 +251,9 @@ public static class XmlCsprojReader
             Remarks = remarks,
             Returns = ReadNodeMethodReturns(returns),
             Exceptions = ReadNodeExceptions(exceptions),
-            Responses = ReadNodeResponses(responses)
+            Responses = ReadNodeResponses(responses),
+            Uri = ReadNodeUri(uri),
+            Permissions = ReadNodePermissions(permissions)
         };
 
         return result;
@@ -283,6 +290,31 @@ public static class XmlCsprojReader
             });
         }
         return result;
+    }
+
+    private static List<PermissionMetadata> ReadNodePermissions(List<XElement> permissions)
+    {
+        var result = new List<PermissionMetadata>();
+        foreach (XElement perm in permissions)
+        {
+            var fullName = GetCRefValue(perm);
+            result.Add(new PermissionMetadata
+            {
+                FullName = fullName
+            });
+        }
+        return result;
+    }
+
+    private static UriMetadata ReadNodeUri(XElement uri)
+    {
+        if (uri == null) return null;
+        if (string.IsNullOrWhiteSpace(uri.Value) && string.IsNullOrWhiteSpace(GetMethodValue(uri))) return null;
+        return new UriMetadata
+        {
+            Method = GetMethodValue(uri),
+            Name = uri.Value
+        };
     }
 
     private static ReturnMetadata ReadNodeMethodReturns(XElement returns)
@@ -325,6 +357,12 @@ public static class XmlCsprojReader
         var value = element?.Attribute(XmlAttributeNames.CREF)?.Value;
         if (string.IsNullOrWhiteSpace(value)) return null;
         return value[2..];
+    }
+
+    private static string GetMethodValue(XElement element)
+    {
+        var value = element?.Attribute(XmlAttributeNames.METHOD)?.Value;
+        return string.IsNullOrWhiteSpace(value) ? null : value;
     }
 
     private static (string fullClassName, string className, string fullElementName, string elementName) GetPropertyAndFieldNames(string name)
