@@ -8,7 +8,7 @@ Console tool for generate markdown documentation at .NET projects
     - `<see cref="tipo de dato" />` _(Solo 1)_
 
 - Eventos .NET:
-    - `<summary>Resumen</summary>`
+    - `<summary>Resumen</summary>` _(Solo 1)_
 
 - Clases, structs, interfaces (Tipos):
     - `<summary>Resumen</summary>` _(Solo 1)_
