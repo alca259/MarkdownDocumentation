@@ -4,26 +4,26 @@ Console tool for generate markdown documentation at .NET projects
 # Etiquetas soportadas:
 
 - Propiedades y campos:
-    - <summary>Resumen</summary> _(Solo 1)_
-    - <see cref="tipo de dato" /> _(Solo 1)_
+    - `<summary>Resumen</summary>` _(Solo 1)_
+    - `<see cref="tipo de dato" />` _(Solo 1)_
 
 - Eventos .NET:
-    - <summary>Resumen</summary>
+    - `<summary>Resumen</summary>`
 
 - Clases, structs, interfaces (Tipos):
-    - <summary>Resumen</summary>
-    - <remarks>Descripción</remarks>
+    - `<summary>Resumen</summary>`
+    - `<remarks>Descripción</remarks>`
 
 - Métodos:
-    - <summary>Resumen</summary> _(Solo 1)_
-    - <param name="nombre del parámetro" cref="tipo de dato">Resumen</param> _(Múltiples, se espera que en el mismo orden)_
-    - <remarks>Descripción</remarks> _(Solo 1)_
-    - <response code="200 (u otro código HTTP)">Descripción</response> _(Múltiples)_
-    - <returns cref="tipo de dato">Resumen</returns> _(Solo 1)_
-    - <example>Información de lo que se espera recibir, bien en formato JSON de los valores requeridos u otros.</example> _(Solo 1)_
-    - <exception cref="tipo de excepción">Resumen de cuando se produce</exception> _(Múltiples)_
-    - <uri method="GET|POST|PUT|DELETE|PATCH...">Url relativa de la API _(Solo para endpoints)_ Ejemplo: `/api/myapi/myendpoint`</uri> _(Solo 1)_
-    - <permission cref="tipo de permiso">No admite resumen. Indica que se debe poseer uno de los permisos de este listado.</permission> _(Múltiples)_
+    - `<summary>Resumen</summary>` _(Solo 1)_
+    - `<param name="nombre del parámetro" cref="tipo de dato">Resumen</param>` _(Múltiples, se espera que en el mismo orden)_
+    - `<remarks>Descripción</remarks>` _(Solo 1)_
+    - `<response code="200 (u otro código HTTP)">Descripción</response>` _(Múltiples)_
+    - `<returns cref="tipo de dato">Resumen</returns>` _(Solo 1)_
+    - `<example>Información de lo que se espera recibir, bien en formato JSON de los valores requeridos u otros.</example>` _(Solo 1)_
+    - `<exception cref="tipo de excepción">Resumen de cuando se produce</exception>` _(Múltiples)_
+    - `<uri method="GET|POST|PUT|DELETE|PATCH...">Url relativa de la API</uri>` _(Solo 1)_ _(Solo para endpoints)_
+    - `<permission cref="tipo de permiso"/>` _(Múltiples)_ No admite resumen. Indica que se debe poseer uno de los permisos de este listado
 
 # Ejemplo de documentar un endpoint:
 ```xml
