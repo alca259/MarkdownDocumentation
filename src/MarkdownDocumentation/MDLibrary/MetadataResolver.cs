@@ -5,7 +5,7 @@ namespace MDLibrary;
 
 public static class MetadataResolver
 {
-    public static List<TypeMetadata> ResolveTypeNames(List<BaseMetadata> elements)
+    public static List<TypeMetadata> ResolveDependencies(List<BaseMetadata> elements)
     {
         Ensure.Argument.NotNull(elements, nameof(elements));
 
